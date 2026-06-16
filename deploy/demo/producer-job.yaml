@@ -28,7 +28,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: producer
-          image: ghcr.io/bhuv01/keda-queue-worker:latest
+          image: manneykapoor/keda-queue-worker:dev
           env:
             - name: MODE
               value: "producer"
