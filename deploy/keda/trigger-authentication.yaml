@@ -1,0 +1,16 @@
+# TriggerAuthentication keeps broker credentials OUT of the ScaledObject. KEDA
+# reads the connection string from the referenced Secret key and injects it into
+# the rabbitmq trigger as the `host` parameter. This is the recommended,
+# enterprise-friendly way to wire credentials.
+apiVersion: keda.sh/v1alpha1
+kind: TriggerAuthentication
+metadata:
+  name: keda-trigger-auth-rabbitmq
+  namespace: keda-demo
+  labels:
+    app.kubernetes.io/part-of: keda-queue-demo
+spec:
+  secretTargetRef:
+    - parameter: host
+      name: rabbitmq-credentials
+      key: management-uri # http://user:pass@rabbitmq:15672/  (Management API)

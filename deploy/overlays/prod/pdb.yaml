@@ -1,0 +1,12 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: queue-worker
+  namespace: keda-demo
+spec:
+  # Protects against voluntary disruptions (node drains). Does NOT block KEDA
+  # scale-to-zero, which is HPA-driven scaling, not a "disruption".
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: queue-worker

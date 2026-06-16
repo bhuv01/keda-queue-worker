@@ -1,0 +1,12 @@
+/bin/
+/dist/
+*.test
+*.out
+coverage.*
+.env
+.idea/
+.vscode/
+*.swp
+.DS_Store
+/tmp/
+*.rendered.yaml

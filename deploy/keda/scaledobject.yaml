@@ -1,0 +1,63 @@
+# ScaledObject — the scaling brain.
+#
+# It watches the RabbitMQ queue "tasks" and drives the queue-worker Deployment:
+#   - empty queue for cooldownPeriod  -> replicas = 0  (scale to zero)
+#   - messages waiting                -> replicas = 1..N
+#
+# Two thresholds matter and are easy to confuse — this is the key KEDA concept:
+#   * value (QueueLength target): controls scaling 1 -> N.
+#       desiredReplicas = ceil(messages / value), clamped to [min, max].
+#       With value=5, a backlog of 32 messages targets ceil(32/5)=7 replicas.
+#   * activationValue: controls the 0 -> 1 transition. KEDA only "activates"
+#       (lifts off zero) once the metric is ABOVE this. With activationValue=0,
+#       any message (>=1) wakes a pod.
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: queue-worker
+  namespace: keda-demo
+  labels:
+    app.kubernetes.io/name: queue-worker
+    app.kubernetes.io/part-of: keda-queue-demo
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: queue-worker
+  minReplicaCount: 0      # <-- scale to zero
+  maxReplicaCount: 10     # <-- the "N" (tuned per environment in overlays)
+  pollingInterval: 10     # seconds between queue checks
+  cooldownPeriod: 60      # seconds of empty queue before going back to 0
+  triggers:
+    - type: rabbitmq
+      authenticationRef:
+        name: keda-trigger-auth-rabbitmq
+      metadata:
+        # http protocol -> uses the Management API, which counts BOTH ready and
+        # unacked (in-flight) messages. Prevents premature scale-in while
+        # consumers are still processing prefetched messages.
+        protocol: http
+        queueName: tasks
+        mode: QueueLength
+        value: "5"            # target messages per replica
+        activationValue: "0"  # any message lifts us off zero
+  advanced:
+    horizontalPodAutoscalerConfig:
+      behavior:
+        scaleUp:
+          stabilizationWindowSeconds: 0
+          policies:
+            - type: Percent
+              value: 100
+              periodSeconds: 15
+            - type: Pods
+              value: 4
+              periodSeconds: 15
+          selectPolicy: Max
+        scaleDown:
+          stabilizationWindowSeconds: 60
+          policies:
+            - type: Percent
+              value: 50
+              periodSeconds: 30
+          selectPolicy: Max

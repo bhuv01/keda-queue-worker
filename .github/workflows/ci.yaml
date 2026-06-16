@@ -1,0 +1,54 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  worker:
+    name: build & test worker
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: worker
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.23"
+          cache-dependency-path: worker/go.sum
+      - name: go vet
+        run: go vet ./...
+      - name: go test
+        run: go test -race -count=1 ./...
+      - name: build binary
+        run: CGO_ENABLED=0 go build -o /tmp/app .
+      - name: docker build (no push)
+        run: docker build -t keda-queue-worker:ci .
+
+  manifests:
+    name: validate manifests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: install kustomize
+        run: |
+          curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | bash
+          sudo mv kustomize /usr/local/bin/
+      - name: kustomize build dev
+        run: kustomize build deploy/overlays/dev > /tmp/dev.yaml && head -n 5 /tmp/dev.yaml
+      - name: kustomize build prod
+        run: kustomize build deploy/overlays/prod > /tmp/prod.yaml && head -n 5 /tmp/prod.yaml
+      - name: install kubeconform
+        run: |
+          curl -sSL -o kubeconform.tar.gz \
+            https://github.com/yannh/kubeconform/releases/latest/download/kubeconform-linux-amd64.tar.gz
+          tar xf kubeconform.tar.gz && sudo mv kubeconform /usr/local/bin/
+      - name: schema-validate rendered manifests
+        run: |
+          kubeconform -strict -ignore-missing-schemas -summary /tmp/dev.yaml
+          kubeconform -strict -ignore-missing-schemas -summary /tmp/prod.yaml

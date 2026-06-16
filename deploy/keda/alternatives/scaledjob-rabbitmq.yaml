@@ -1,0 +1,59 @@
+# =============================================================================
+# ALTERNATIVE (for learning): ScaledJob instead of ScaledObject
+# =============================================================================
+# NOT applied by the kustomizations. This shows the second core KEDA primitive.
+#
+# ScaledObject  -> scales a long-running Deployment (consumers stay alive).
+# ScaledJob     -> creates a Kubernetes Job PER unit of work; each pod processes
+#                  a batch then exits. Great for "run to completion" tasks
+#                  (video encode, report generation, ETL) where you don't want a
+#                  persistent consumer.
+#
+# Here: for every `value` messages in the queue, KEDA spawns one Job (up to
+# maxReplicaCount concurrent). Each Job runs the SAME image in worker mode but is
+# expected to process a bounded number of messages then exit (adapt the worker,
+# or set a message/time budget, for true run-to-completion semantics).
+apiVersion: keda.sh/v1alpha1
+kind: ScaledJob
+metadata:
+  name: queue-worker-job
+  namespace: keda-demo
+spec:
+  jobTargetRef:
+    parallelism: 1
+    completions: 1
+    backoffLimit: 3
+    template:
+      metadata:
+        labels:
+          app.kubernetes.io/name: queue-worker-job
+      spec:
+        restartPolicy: Never
+        containers:
+          - name: worker
+            image: ghcr.io/OWNER/keda-queue-worker:latest
+            env:
+              - name: MODE
+                value: "worker"
+              - name: QUEUE_NAME
+                value: "tasks"
+              - name: AMQP_URI
+                valueFrom:
+                  secretKeyRef:
+                    name: rabbitmq-credentials
+                    key: amqp-uri
+  pollingInterval: 10
+  maxReplicaCount: 20         # max concurrent Jobs
+  successfulJobsHistoryLimit: 5
+  failedJobsHistoryLimit: 5
+  scalingStrategy:
+    strategy: default
+  triggers:
+    - type: rabbitmq
+      authenticationRef:
+        name: keda-trigger-auth-rabbitmq
+      metadata:
+        protocol: http
+        queueName: tasks
+        mode: QueueLength
+        value: "10"           # one Job per ~10 queued messages

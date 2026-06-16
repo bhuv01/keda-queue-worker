@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: keda-demo
+  labels:
+    app.kubernetes.io/part-of: keda-queue-demo
+    # We run a self-managed RabbitMQ here for the demo, so we enforce the
+    # "baseline" Pod Security Standard (the broker image needs a writable root
+    # FS) while still auditing/warning against "restricted". The worker pod
+    # itself is fully restricted-compliant via its own securityContext.
+    pod-security.kubernetes.io/enforce: baseline
+    pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/warn: restricted

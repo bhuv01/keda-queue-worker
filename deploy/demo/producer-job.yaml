@@ -1,0 +1,50 @@
+# One-off Job that publishes a backlog of messages to the queue, which causes
+# KEDA to scale the worker from 0 up. Not part of the kustomize overlays — it's a
+# demo tool. Apply it directly or via scripts/produce.sh.
+#
+#   kubectl apply -f deploy/demo/producer-job.yaml
+#   # re-run: it uses generateName, so just apply again for a fresh Job.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  generateName: producer-
+  namespace: keda-demo
+  labels:
+    app.kubernetes.io/name: producer
+    app.kubernetes.io/part-of: keda-queue-demo
+spec:
+  backoffLimit: 3
+  ttlSecondsAfterFinished: 300
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: producer
+    spec:
+      restartPolicy: Never
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: producer
+          image: ghcr.io/OWNER/keda-queue-worker:latest
+          env:
+            - name: MODE
+              value: "producer"
+            - name: QUEUE_NAME
+              value: "tasks"
+            - name: COUNT
+              value: "200"        # number of messages to enqueue
+            - name: PUBLISH_DELAY
+              value: "0"          # e.g. "50ms" to drip-feed instead of burst
+            - name: AMQP_URI
+              valueFrom:
+                secretKeyRef:
+                  name: rabbitmq-credentials
+                  key: amqp-uri
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]

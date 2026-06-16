@@ -1,0 +1,74 @@
+name: release
+
+# On a v* tag: build & push the image to GHCR, then bump the prod image tag in
+# Git (GitOps). ArgoCD then syncs the change to the cluster.
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+  packages: write
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository_owner }}/keda-queue-worker
+
+jobs:
+  build-push:
+    runs-on: ubuntu-latest
+    outputs:
+      image_tag: ${{ steps.meta.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: derive tags
+        id: meta
+        run: |
+          VERSION="${GITHUB_REF_NAME}"
+          SHA_SHORT="$(git rev-parse --short HEAD)"
+          echo "version=${VERSION}-${SHA_SHORT}" >> "$GITHUB_OUTPUT"
+          echo "created=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
+      - uses: docker/setup-buildx-action@v3
+      - name: log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: build & push
+        uses: docker/build-push-action@v6
+        with:
+          context: ./worker
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.version }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          build-args: |
+            VERSION=${{ github.ref_name }}
+            COMMIT=${{ github.sha }}
+            BUILD_DATE=${{ steps.meta.outputs.created }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  gitops-bump:
+    needs: build-push
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: install kustomize
+        run: |
+          curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | bash
+          sudo mv kustomize /usr/local/bin/
+      - name: bump prod image tag
+        working-directory: deploy/overlays/prod
+        run: |
+          kustomize edit set image \
+            ghcr.io/OWNER/keda-queue-worker=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.build-push.outputs.image_tag }}
+      - name: commit & push manifest change
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add deploy/overlays/prod/kustomization.yaml
+          git commit -m "chore(release): bump prod image to ${{ needs.build-push.outputs.image_tag }} [skip ci]"
+          git push
