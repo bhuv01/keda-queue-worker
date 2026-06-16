@@ -6,7 +6,7 @@ metadata:
 spec:
   description: KEDA queue/message-driven scaling demo
   sourceRepos:
-    - https://github.com/OWNER/keda-queue-worker.git
+    - https://github.com/bhuv01/keda-queue-worker.git
   destinations:
     - server: https://kubernetes.default.svc
       namespace: keda-demo

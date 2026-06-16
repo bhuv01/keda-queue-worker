@@ -12,8 +12,8 @@ resources:
 namespace: keda-demo
 
 images:
-  - name: ghcr.io/OWNER/keda-queue-worker
-    newName: ghcr.io/OWNER/keda-queue-worker
+  - name: ghcr.io/bhuv01/keda-queue-worker
+    newName: ghcr.io/bhuv01/keda-queue-worker
     newTag: latest # CI replaces with the immutable git-SHA tag on release
 
 patches:

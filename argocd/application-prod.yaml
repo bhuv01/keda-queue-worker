@@ -8,7 +8,7 @@ metadata:
 spec:
   project: keda-queue-demo
   source:
-    repoURL: https://github.com/OWNER/keda-queue-worker.git
+    repoURL: https://github.com/bhuv01/keda-queue-worker.git
     targetRevision: HEAD
     path: deploy/overlays/prod
   destination:

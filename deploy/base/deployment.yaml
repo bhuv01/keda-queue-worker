@@ -37,7 +37,7 @@ spec:
       terminationGracePeriodSeconds: 30
       containers:
         - name: worker
-          image: ghcr.io/OWNER/keda-queue-worker:latest # overridden per overlay
+          image: ghcr.io/bhuv01/keda-queue-worker:latest # overridden per overlay
           imagePullPolicy: IfNotPresent
           ports:
             - name: http

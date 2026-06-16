@@ -13,7 +13,7 @@ permissions:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository_owner }}/keda-queue-worker
+  IMAGE_NAME: ${{ github.repository_bhuv01 }}/keda-queue-worker
 
 jobs:
   build-push:
@@ -64,7 +64,7 @@ jobs:
         working-directory: deploy/overlays/prod
         run: |
           kustomize edit set image \
-            ghcr.io/OWNER/keda-queue-worker=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.build-push.outputs.image_tag }}
+            ghcr.io/bhuv01/keda-queue-worker=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.build-push.outputs.image_tag }}
       - name: commit & push manifest change
         run: |
           git config user.name "github-actions[bot]"

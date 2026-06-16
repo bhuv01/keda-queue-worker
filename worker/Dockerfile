@@ -35,7 +35,7 @@ LABEL org.opencontainers.image.title="keda-queue-worker" \
       org.opencontainers.image.version="${VERSION}" \
       org.opencontainers.image.revision="${COMMIT}" \
       org.opencontainers.image.created="${BUILD_DATE}" \
-      org.opencontainers.image.source="https://github.com/OWNER/keda-queue-worker" \
+      org.opencontainers.image.source="https://github.com/bhuv01/keda-queue-worker" \
       org.opencontainers.image.licenses="MIT"
 
 WORKDIR /

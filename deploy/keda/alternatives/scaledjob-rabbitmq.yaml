@@ -31,7 +31,7 @@ spec:
         restartPolicy: Never
         containers:
           - name: worker
-            image: ghcr.io/OWNER/keda-queue-worker:latest
+            image: ghcr.io/bhuv01/keda-queue-worker:latest
             env:
               - name: MODE
                 value: "worker"

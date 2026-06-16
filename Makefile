@@ -1,4 +1,4 @@
-IMAGE ?= ghcr.io/OWNER/keda-queue-worker
+IMAGE ?= ghcr.io/bhuv01/keda-queue-worker
 TAG   ?= dev
 
 .PHONY: help test build docker keda deploy-dev deploy-prod produce watch render clean

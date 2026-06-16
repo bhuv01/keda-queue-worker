@@ -41,10 +41,10 @@ queue→scale flow, including the two thresholds people most often confuse
 - A running Kubernetes cluster + `kubectl` (you said it's already set up ✅)
 - `helm` 3
 - (For GitOps) ArgoCD installed, and this repo pushed to GitHub
-- Replace `OWNER` placeholders with your GitHub org/user
+- Replace `bhuv01` placeholders with your GitHub org/user
 
 ```bash
-grep -rl "OWNER" . | xargs sed -i 's#OWNER#your-gh-username#g'
+grep -rl "bhuv01" . | xargs sed -i 's#bhuv01#your-gh-username#g'
 ```
 
 ---
@@ -78,7 +78,7 @@ grep -rl "OWNER" . | xargs sed -i 's#OWNER#your-gh-username#g'
 
 ## GitOps deployment (GitHub Actions + ArgoCD)
 
-1. Push to GitHub and replace `OWNER`.
+1. Push to GitHub and replace `bhuv01`.
 2. **CI** (`.github/workflows/ci.yaml`): Go vet + tests, Docker build,
    `kustomize build`, and `kubeconform` schema validation on every PR/push.
 3. **Release** (`.github/workflows/release.yaml`) on a `v*` tag: builds & pushes

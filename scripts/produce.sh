@@ -4,7 +4,7 @@
 # Defaults: 200 messages using the dev image tag.
 set -euo pipefail
 COUNT="${1:-200}"
-IMAGE="${2:-ghcr.io/OWNER/keda-queue-worker:dev}"
+IMAGE="${2:-ghcr.io/bhuv01/keda-queue-worker:dev}"
 
 # Apply a templated one-off producer Job:
 kubectl apply -n keda-demo -f - <<JOB
